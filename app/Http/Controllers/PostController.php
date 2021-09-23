@@ -4,18 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+
 
 class PostController extends Controller
 {
-    public function index(Request $req){
+    public function index(){
         return Post::all();
     }
 
-    public function get($id){
-        $result = Post::find($id);
-        //$result = DB::table('posts')->where('user', '=', $user)->get();
+    public function get($id_topic){
+        $result = Post::where('topics_id', $id_topic);
         if($result)
             return $result;
         else
@@ -24,17 +22,11 @@ class PostController extends Controller
 
     public function create(Request $req){
         $this->validate($req, [
-            'id'=>'required', 
-            'user'=>'required',
             'topics_id'=>'required',
             'mensaje'=>'required']);
 
         $datos = new Post;
-        // $datos->user = $req->user;
-       // $datos->pass = Hash::make( $req->pass );
-        // $datos->nombre = $req->nombre;
-        // $datos->rol = $req->rol;
-        // $datos->save();
+        $datos->user = $req->user()->user;
         $result = $datos->fill($req->all())->save();
         if($result)
             return response()->json(['status'=>'success'], 200);
@@ -44,13 +36,12 @@ class PostController extends Controller
 
     public function update(Request $req, $id){
         $this->validate($req, [
-            'id'=>'filled', 
-            'user'=>'filled',
-            'topics_id'=>'filled',
             'mensaje'=>'filled']);
-
+        
+        
         $datos = Post::find($id);
-        //$datos->pass = $req->pass;
+        if(!$datos) return response()->json(['status'=>'failed'], 404);
+        if($req->user()->user != $datos->user) return response()->json(['status'=>'failed'], 401);
         $result = $datos->fill($req->all())->save();
         if($result)
             return response()->json(['status'=>'success'], 200);
